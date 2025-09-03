@@ -1,0 +1,18 @@
+Package: SEACAR
+Type: Package
+Title: SEACAR Package
+Version: 0.3.0
+Author: Florida SEACAR
+Maintainer: Florida SEACAR <SEACAR@FloridaDEP.gov>
+Description: A repository for helper functions and data to help wrangle SEACAR data.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Depends: 
+    R (>= 3.5)
+Imports:
+    ggplot2,
+    knitr,
+    stats,
+    sf

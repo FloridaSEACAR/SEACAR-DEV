@@ -1,0 +1,22 @@
+#' WebsiteParameters
+#'
+#' A reference of available habitats, indicators, and parameters
+#'
+#' @format A data frame with columns:
+#' \describe{
+#'   \item{HabitatName}{Name of SEACAR habitat}
+#'   \item{HabitatShort}{Abbreviated form of HabitatName}
+#'   \item{IndicatorName}{Name of SEACAR indicator}
+#'   \item{IndicatorShort}{Abbreviated form of IndicatorName}
+#'   \item{ParameterName}{Name of SEACAR parameter}
+#'   \item{ParameterShort}{Abbreviated form of ParameterName}
+#'   \item{ParameterUnits}{Units of ParameterName, if available}
+#'   \item{ActivityType}{Type of sample collection [Lab, Field, All (lab and field combined)]}
+#'   \item{RelativeDepth}{Depth of sample collection [Surface, Bottom, All]}
+#'   \item{SamplingFrequency}{Frequency of WQ data collection (Discrete vs. Continuous)}
+#'   \item{Website}{Whether a given ParameterName / ActivityType / RelativeDepth combination is included on the SEACAR Atlas}
+#'   \item{ParameterVisId}{Parameter Visualization ID for internal use on the SEACAR Atlas}
+#' }
+#'
+#' @source Created by Florida SEACAR
+"WebsiteParameters"
