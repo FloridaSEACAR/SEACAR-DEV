@@ -20,7 +20,7 @@ FigureCaptions <- openxlsx::read.xlsx("inst/extdata/AtlasFigureCaptions_Final.xl
   as.data.table()
 usethis::use_data(FigureCaptions, overwrite = TRUE)
 
-TableDescriptions <- openxlsx::read.xlsx("inst/extdata/Atlas_Descriptions_2025-05-15_Final.xlsx")
+TableDescriptions <- openxlsx::read.xlsx("inst/extdata/Atlas_Descriptions_2025-09-30.xlsx")
 usethis::use_data(TableDescriptions, overwrite = TRUE)
 
 DB_Thresholds <- openxlsx::read.xlsx("inst/extdata/SEACAR_Metadata.xlsx", sheet = "Ref_QAThresholds", startRow = 7, check.names = F)
@@ -40,7 +40,7 @@ locs_pts <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate,
 locs_lns <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Line.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
 # Ensure we are using latest RCP shape file
-rcp <- st_read(paste0(seacar_shape_location, "/RCP/Boundaries_2025_8_27/ORCP_Managed_Areas_Apr2025.shp")) %>%
+rcp <- st_read(paste0(seacar_shape_location, "/RCP/BoundaryUpdate2025oct3/ORCP_Managed_Areas_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
 
 # Create "corners" crosswalk to provide min and max values
@@ -91,3 +91,6 @@ GeoData <- list("pointLocations" = locs_pts,
                 "RCP Boundaries" = rcp,
                 "corners" = corners)
 usethis::use_data(GeoData, overwrite = TRUE)
+
+# devtools::document()
+# devtools::install()

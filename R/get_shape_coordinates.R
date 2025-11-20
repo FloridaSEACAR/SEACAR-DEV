@@ -2,6 +2,8 @@
 #'
 #' @param ma_shape a single-line sf dataframe (output from SEACAR::find_shape())
 #'
+#' @importFrom sf st_geometry
+#'
 #' @return A data.frame with 4 values corresponding to min and max coordinate values: xmin, ymin, xmax, ymax
 #' @export
 #'
