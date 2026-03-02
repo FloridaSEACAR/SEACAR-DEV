@@ -4,6 +4,14 @@ library(dplyr)
 library(ggplot2)
 library(extrafont)
 
+# Temporary get_shape_coordinates, call into global so can be used to determine "corners"
+get_shape_coordinates <- function(ma_shape){
+  bbox_list <- lapply(st_geometry(ma_shape), st_bbox)
+  maxmin <- as.data.frame(matrix(unlist(bbox_list),nrow=nrow(ma_shape)))
+  names(maxmin) <- names(bbox_list[[1]])
+  return(maxmin)
+}
+
 ManagedAreas <- fread("inst/extdata/ManagedArea.csv", na.strings = "")
 usethis::use_data(ManagedAreas, overwrite = TRUE)
 
@@ -31,17 +39,29 @@ usethis::use_data(DB_Thresholds, overwrite = TRUE)
 ##### load_shape_files.R
 # Load and transform location-based .shp files from latest export
 source("../SEACAR_Trend_Analyses/SEACAR_data_location.R")
-shape_files <- list.files(seacar_shape_location, full=T)
 library(sf)
-# Modify GeoDBdate to match date of the latest geodatabase export (i.e., SampleLocationsddMMYYY)
-GeoDBdate <- "2jun2025"
+# Point locations shapefile
 locs_pts <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Point.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
+# Transect locations shapefile
 locs_lns <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Line.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
 # Ensure we are using latest RCP shape file
 rcp <- st_read(paste0(seacar_shape_location, "/RCP/BoundaryUpdate2025oct3/ORCP_Managed_Areas_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
+# Import latest OIMMP boundaries
+oimmp <- st_read(paste0(seacar_shape_location, "/RCP/BoundaryUpdate2025oct3/ORCP_MA_Coral_MAbuff_CHIMMP_OIMMP_2025oct3.shp")) %>%
+  st_make_valid() %>% st_transform(crs = 4326) %>%
+  group_by(Region) %>% summarise() %>%
+  filter(!Region=="9999") %>%
+  rename("OIMMP" = "Region")
+
+GeoData <- list("pointLocations" = locs_pts,
+                "lineLocations" = locs_lns,
+                "RCP Boundaries" = rcp,
+                "corners" = corners,
+                "OIMMP" = oimmp)
+usethis::use_data(GeoData, overwrite = TRUE)
 
 # Create "corners" crosswalk to provide min and max values
 # Declare "coast" min/max values to create groupings (Atlantic, Gulf, Panhandle)
@@ -74,7 +94,7 @@ assign_coast <- function(xmin, xmax, ymin, ymax){
 corners <- data.frame()
 for(ma in rcp$LONG_NAME){
   subset <- rcp %>% filter(LONG_NAME==ma)
-  corner <- SEACAR::get_shape_coordinates(subset)
+  corner <- get_shape_coordinates(subset)
   corner$LONG_NAME <- ma
   corners <- bind_rows(corners, corner)
 }
@@ -86,11 +106,5 @@ corners <- corners %>%
          ymax = ymax + (ymax-ymin)*0.1) %>%
   ungroup()
 
-GeoData <- list("pointLocations" = locs_pts,
-                "lineLocations" = locs_lns,
-                "RCP Boundaries" = rcp,
-                "corners" = corners)
-usethis::use_data(GeoData, overwrite = TRUE)
-
-# devtools::document()
-# devtools::install()
+devtools::document()
+devtools::install()
