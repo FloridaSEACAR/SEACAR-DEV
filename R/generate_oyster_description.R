@@ -78,7 +78,7 @@ generate_oyster_description <- function(data){
         if(!hab_type %in% unique(filtered_oy$HabitatType)) next
         filtered_oy_ht <- filtered_oy[HabitatType == hab_type & !SizeClass == "" & ShellType == "Live Oysters", ]
         filtered_oy_ht <- filtered_oy_ht %>% rowwise() %>%
-          mutate("trend" = ifelse(!is.na(ModelEstimate), trendText(ModelEstimate, LowerConfidence, UpperConfidence), NA)) %>%
+          mutate("trend" = ifelse(!is.na(ModelEstimate), oyTrendText(ModelEstimate, LowerConfidence, UpperConfidence), NA)) %>%
           as.data.table()
 
         num_inc <- nrow(filtered_oy_ht[ModelEstimate > 0 & !str_detect(trend, "No significant change")])
