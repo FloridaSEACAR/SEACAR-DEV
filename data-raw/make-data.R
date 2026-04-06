@@ -40,6 +40,7 @@ usethis::use_data(DB_Thresholds, overwrite = TRUE)
 # Load and transform location-based .shp files from latest export
 source("../SEACAR_Trend_Analyses/SEACAR_data_location.R")
 library(sf)
+GeoDBdate <- "9Mar2026"
 # Point locations shapefile
 locs_pts <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Point.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
@@ -47,21 +48,14 @@ locs_pts <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate,
 locs_lns <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Line.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
 # Ensure we are using latest RCP shape file
-rcp <- st_read(paste0(seacar_shape_location, "/RCP/BoundaryUpdate2025oct3/ORCP_Managed_Areas_2025oct3.shp")) %>%
+rcp <- st_read(paste0(seacar_shape_location, "/BoundaryUpdate2025oct3/ORCP_Managed_Areas_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
 # Import latest OIMMP boundaries
-oimmp <- st_read(paste0(seacar_shape_location, "/RCP/BoundaryUpdate2025oct3/ORCP_MA_Coral_MAbuff_CHIMMP_OIMMP_2025oct3.shp")) %>%
+oimmp <- st_read(paste0(seacar_shape_location, "/BoundaryUpdate2025oct3/ORCP_MA_Coral_MAbuff_CHIMMP_OIMMP_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326) %>%
   group_by(Region) %>% summarise() %>%
   filter(!Region=="9999") %>%
   rename("OIMMP" = "Region")
-
-GeoData <- list("pointLocations" = locs_pts,
-                "lineLocations" = locs_lns,
-                "RCP Boundaries" = rcp,
-                "corners" = corners,
-                "OIMMP" = oimmp)
-usethis::use_data(GeoData, overwrite = TRUE)
 
 # Create "corners" crosswalk to provide min and max values
 # Declare "coast" min/max values to create groupings (Atlantic, Gulf, Panhandle)
@@ -96,6 +90,15 @@ for(ma in rcp$LONG_NAME){
   subset <- rcp %>% filter(LONG_NAME==ma)
   corner <- get_shape_coordinates(subset)
   corner$LONG_NAME <- ma
+  corner$class <- "ManagedAreaName"
+  corners <- bind_rows(corners, corner)
+}
+
+for(oimmp_region in oimmp$OIMMP){
+  subset <- oimmp %>% filter(OIMMP==oimmp_region)
+  corner <- get_shape_coordinates(subset)
+  corner$LONG_NAME <- oimmp_region
+  corner$class <- "OIMMP"
   corners <- bind_rows(corners, corner)
 }
 
@@ -105,6 +108,18 @@ corners <- corners %>%
          xmax = xmax + (xmax-xmin)*0.25,
          ymax = ymax + (ymax-ymin)*0.1) %>%
   ungroup()
+
+# Assign coasts not working for OIMMP boundaries, input manually
+corners$Coast[corners$LONG_NAME %in% c("Big Bend", "Southwest Florida", "Tampa and Sarasota Bays")] <- "Gulf"
+corners$Coast[corners$LONG_NAME %in% c("Apalachicola Bay", "Northwest Florida")] <- "Panhandle"
+corners$Coast[corners$LONG_NAME %in% c("Northeast Florida", "Biscayne Bay and Florida Keys", "Central and Southeast Florida")] <- "Atlantic"
+
+GeoData <- list("pointLocations" = locs_pts,
+                "lineLocations" = locs_lns,
+                "RCP Boundaries" = rcp,
+                "corners" = corners,
+                "OIMMP" = oimmp)
+usethis::use_data(GeoData, overwrite = TRUE)
 
 devtools::document()
 devtools::install()
