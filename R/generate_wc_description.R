@@ -16,8 +16,8 @@ generate_wc_description <- function(input_df){
   # Declare discrete function
   generate_wc_description_discrete <- function(input_df){
     descriptionTable <- data.table()
-    input_df$SennSlope <- ifelse(round(input_df$SennSlope,2)==0.00, "less than 0.01",
-                                 round(input_df$SennSlope,2))
+    input_df$SenSlope <- ifelse(round(input_df$SenSlope,2)==0.00, "less than 0.01",
+                                 round(input_df$SenSlope,2))
     for(parameter in unique(input_df$ParameterName)){
       indicator <- WebsiteParameters[ParameterName==parameter, unique(IndicatorName)]
 
@@ -38,15 +38,15 @@ generate_wc_description <- function(input_df){
           wc_trend <- "a decrease"
           if(parameter=="Secchi Depth"){
             sentence <- sprintf("Monthly average %s became shallower by %s %s per year, indicating %s in water clarity.",
-                                display_parameter, increasing$SennSlope, units, wc_trend)
+                                display_parameter, increasing$SenSlope, units, wc_trend)
           } else {
             sentence <- sprintf("Monthly average %s increased by %s %s per year, indicating %s in water clarity.",
-                                display_parameter, increasing$SennSlope, units, wc_trend)
+                                display_parameter, increasing$SenSlope, units, wc_trend)
           }
           sentences <- c(sentences, sentence)
         } else {
           sentence <- sprintf("Monthly average %s increased by %s %s per year.",
-                              display_parameter, increasing$SennSlope, units)
+                              display_parameter, increasing$SenSlope, units)
           sentences <- c(sentences, sentence)
         }
       }
@@ -56,15 +56,15 @@ generate_wc_description <- function(input_df){
           wc_trend <- "an increase"
           if(parameter=="Secchi Depth"){
             sentence <- sprintf("Monthly average %s became deeper by %s %s per year, indicating %s in water clarity.",
-                                display_parameter, decreasing$SennSlope, units, wc_trend)
+                                display_parameter, decreasing$SenSlope, units, wc_trend)
           } else {
             sentence <- sprintf("Monthly average %s decreased by %s %s per year, indicating %s in water clarity.",
-                                display_parameter, decreasing$SennSlope, units, wc_trend)
+                                display_parameter, decreasing$SenSlope, units, wc_trend)
           }
           sentences <- c(sentences, sentence)
         } else {
           sentence <- sprintf("Monthly average %s decreased by %s %s per year.",
-                              display_parameter, decreasing$SennSlope, units)
+                              display_parameter, decreasing$SenSlope, units)
           sentences <- c(sentences, sentence)
         }
       }
@@ -126,10 +126,10 @@ generate_wc_description <- function(input_df){
       results_p_subset <- p_subset %>%
         group_by(ParameterName, StatisticalTrend) %>%
         summarise(n_stations = n(),
-                  min_slope = min(SennSlope),
-                  max_slope = max(SennSlope),
-                  min_slope_pct = (min_slope * n_stations) / mean(SennSlope),
-                  max_slope_pct = (max_slope * n_stations) / mean(SennSlope),
+                  min_slope = min(SenSlope),
+                  max_slope = max(SenSlope),
+                  min_slope_pct = (min_slope * n_stations) / mean(SenSlope),
+                  max_slope_pct = (max_slope * n_stations) / mean(SenSlope),
                   .groups = "keep") %>% as.data.table()
 
       results_p_subset$min_slope <- ifelse(is.na(results_p_subset$min_slope), NA, abs(results_p_subset$min_slope))
@@ -308,10 +308,8 @@ generate_wc_description <- function(input_df){
 
   # Determine which function to use based on data input
   if(!any(str_detect(names(input_df), "ProgramID"))){
-    print("discrete")
     descriptionText <- generate_wc_description_discrete(input_df)
   } else {
-    print("cont")
     descriptionText <- generate_wc_description_continuous(input_df)
   }
   return(descriptionText)

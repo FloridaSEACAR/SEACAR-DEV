@@ -50,6 +50,7 @@ locs_lns <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate,
 # Ensure we are using latest RCP shape file
 rcp <- st_read(paste0(seacar_shape_location, "/BoundaryUpdate2025oct3/ORCP_Managed_Areas_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)
+rcp$LONG_NAME[rcp$LONG_NAME=="North Fork, St. Lucie Aquatic Preserve"] <- "North Fork St. Lucie Aquatic Preserve"
 # Import latest OIMMP boundaries
 oimmp <- st_read(paste0(seacar_shape_location, "/BoundaryUpdate2025oct3/ORCP_MA_Coral_MAbuff_CHIMMP_OIMMP_2025oct3.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326) %>%

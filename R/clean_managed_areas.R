@@ -33,50 +33,73 @@
 #'   OtherColumn = c("X", "Y")
 #' )
 #'
-#' clean_managed_areas(df)
+#' clean_managed_areas(df, type = "ma")
 #'
-#' @import dplyr tidyr stringr
+#' @import dplyr tidyr stringr polars data.table
 #' @export
 clean_managed_areas <- function(df, type) {
-  df <- df %>% mutate(.row_id = row_number())
-  if(type %in% c("ma", "buff")){
-    ma_col <- ifelse(type=="ma", "ManagedAreaName", "ManagedAreaName_Buff")
-    a_id_col <- ifelse(type=="ma", "AreaID", "AreaID_Buff")
+  if (type %in% c("ma", "buff")) {
+    ma_col   <- if (type == "ma") "ManagedAreaName" else "ManagedAreaName_Buff"
+    a_id_col <- if (type == "ma") "AreaID" else "AreaID_Buff"
   } else {
     stop("Input `type` must be either 'ma' or 'buff'.")
   }
-  # Long form of AreaID
-  area_long <- df %>%
-    dplyr::select(.row_id, a_id = dplyr::all_of(a_id_col)) %>%
-    tidyr::separate_rows(a_id, sep = "/", convert = FALSE) %>%
-    dplyr::mutate(a_id = str_trim(a_id))
 
-  # Long form of ManagedAreaName, extracting IDs and names
-  name_long <- df %>%
-    dplyr::select(.row_id, ma = dplyr::all_of(ma_col)) %>%
-    tidyr::separate_rows(ma, sep = "/") %>%
-    dplyr::mutate(
-      ma = stringr::str_trim(ma),
-      ID_extracted = stringr::str_extract(ma, "^\\d+"),
-      Name_clean   = stringr::str_replace(ma, "^\\d+\\s*-\\s*", "")
+  ldf <- as_polars_lf(df)$with_row_index(".row_id")
+
+  area_long <- ldf$
+    select(
+      ".row_id",
+      pl$col(a_id_col)$alias("a_id")
+    )$
+    with_columns(
+      pl$col("a_id")$str$split("/")$alias("a_id")
+    )$
+    explode("a_id")$
+    with_columns(
+      pl$col("a_id")$str$strip_chars()$alias("a_id")
     )
 
-  # Join both by row_id + numeric ID
-  result <- area_long %>%
-    dplyr::inner_join(
+  name_long <- ldf$
+    select(
+      ".row_id",
+      pl$col(ma_col)$alias("ma")
+    )$
+    with_columns(
+      pl$col("ma")$str$split("/")$alias("ma")
+    )$
+    explode("ma")$
+    with_columns(
+      pl$col("ma")$str$strip_chars()$alias("ma"),
+      pl$col("ma")$str$extract("^(\\d+)", 1)$alias("ID_extracted"),
+      pl$col("ma")$str$replace("^\\d+\\s*-\\s*", "")$alias("Name_clean")
+    )
+
+  df_other <- ldf$drop(c(a_id_col, ma_col))
+
+  result <- area_long$
+    join(
       name_long,
-      by = c(".row_id", "a_id" = "ID_extracted")
-    ) %>%
-    dplyr::select(-ma) %>%
-    dplyr::rename(
-      !!ma_col := Name_clean,
-      !!a_id_col := a_id
-    ) %>%
-    dplyr::left_join(
-      df %>% dplyr::select(-dplyr::all_of(c(a_id_col, ma_col))),
-      by = ".row_id") %>%
-    dplyr::select(-.row_id) %>%
-    dplyr::mutate(!!a_id_col := as.numeric(.data[[a_id_col]]))
+      left_on = c(".row_id", "a_id"),
+      right_on = c(".row_id", "ID_extracted"),
+      how = "inner"
+    )$
+    with_columns(
+      pl$col("Name_clean")$alias(ma_col),
+      pl$col("a_id")$alias(a_id_col)
+    )$
+    drop(c("ma", "Name_clean", "a_id"))$
+    join(
+      df_other,
+      on = ".row_id",
+      how = "left"
+    )$
+    drop(".row_id")$
+    with_columns(
+      pl$col(a_id_col)$cast(pl$Float64)
+    )$
+    collect() |>
+    as.data.table()
 
   result
 }

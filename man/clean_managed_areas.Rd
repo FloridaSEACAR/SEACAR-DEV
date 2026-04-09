@@ -44,6 +44,6 @@ df <- data.frame(
   OtherColumn = c("X", "Y")
 )
 
-clean_managed_areas(df)
+clean_managed_areas(df, type = "ma")
 
 }
