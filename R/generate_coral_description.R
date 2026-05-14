@@ -14,7 +14,7 @@
 generate_coral_description <- function(data){
   # Function for coral percent cover
   generate_coral_description_pc <- function(data){
-    trend <- data$StatisticalTrend
+    trend <- data$TrendText
     min_year <- data$EarliestYear
     max_year <- data$LatestYear
     slope <- ifelse(round(data$LME_Slope, 2)==0.00, "less than 0.01", round(data$LME_Slope, 2))
@@ -23,15 +23,15 @@ generate_coral_description <- function(data){
       sentence <- glue("There was insufficient data to determine a trend{time_period}.")
     }
     if(str_detect(trend, "Model did not fit")){
-      model_result <- glue("The model did not fit the available data{time_period}.")
+      sentence <- glue("The model did not fit the available data{time_period}.")
     }
-    if(str_detect(trend, "No significant")){
+    if(str_detect(trend, "No detectable")){
       sentence <- glue("Percent cover showed no detectable trend{time_period}.")
     }
-    if(str_detect(trend, "Significantly increasing")){
+    if(str_detect(trend, "Increasing")){
       sentence <- glue("Annual average percent cover increased by {slope}%.")
     }
-    if(str_detect(trend, "Significantly decreasing")){
+    if(str_detect(trend, "Decreasing")){
       sentence <- glue("Annual average percent cover decreased by {slope}%{time_period}.")
     }
     return(sentence)
@@ -60,9 +60,6 @@ generate_coral_description <- function(data){
   if(any(str_detect(names(data), "LME_"))){
     indicator <- "Percent Cover"
     parameter <- "Percent Cover"
-    data <- data %>% distinct() %>% rowwise() %>%
-      mutate(StatisticalTrend = SEACAR::checkTrends(p = LME_p, Slope = LME_Slope,
-                                                    SufficientData = SufficientData))
   } else {
     indicator <- "Grazers and Reef Dependent Species"
     parameter <- "Presence/Absence"

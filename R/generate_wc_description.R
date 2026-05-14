@@ -17,17 +17,17 @@ generate_wc_description <- function(input_df){
   generate_wc_description_discrete <- function(input_df){
     descriptionTable <- data.table()
     input_df$SenSlope <- ifelse(round(input_df$SenSlope,2)==0.00, "less than 0.01",
-                                 round(input_df$SenSlope,2))
+                                round(input_df$SenSlope,2))
     for(parameter in unique(input_df$ParameterName)){
       indicator <- WebsiteParameters[ParameterName==parameter, unique(IndicatorName)]
 
       p_subset <- input_df[ParameterName==parameter, ]
       units <- ifelse(parameter=="pH", "pH units", WebsiteParameters[ParameterName==parameter, unique(ParameterUnits)])
 
-      increasing <- p_subset[str_detect(tolower(StatisticalTrend), "increasing"), ]
-      decreasing <- p_subset[str_detect(tolower(StatisticalTrend), "decreasing"), ]
-      no_change <- p_subset[str_detect(tolower(StatisticalTrend), "no significant"), ]
-      insufficient <- p_subset[str_detect(tolower(StatisticalTrend), "insufficient"), ]
+      increasing <- p_subset[str_detect(tolower(TrendText), "increasing"), ]
+      decreasing <- p_subset[str_detect(tolower(TrendText), "decreasing"), ]
+      no_change <- p_subset[str_detect(tolower(TrendText), "no detectable"), ]
+      insufficient <- p_subset[str_detect(tolower(TrendText), "insufficient"), ]
 
       display_parameter <- ifelse(parameter=="pH", parameter, tolower(parameter))
 
@@ -124,7 +124,7 @@ generate_wc_description <- function(input_df){
       units <- WebsiteParameters[ParameterName==parameter, unique(ParameterUnits)]
 
       results_p_subset <- p_subset %>%
-        group_by(ParameterName, StatisticalTrend) %>%
+        group_by(ParameterName, TrendText) %>%
         summarise(n_stations = n(),
                   min_slope = min(SenSlope),
                   max_slope = max(SenSlope),
@@ -139,20 +139,20 @@ generate_wc_description <- function(input_df){
 
       # It is necessary to determine the ordering of the absolute value slopes for each subset beforehand (slope1, slope2)
       # Because once some are converted to character they cannot be compared
-      increasing <- results_p_subset[str_detect(tolower(StatisticalTrend), "increasing"), ]
+      increasing <- results_p_subset[str_detect(tolower(TrendText), "increasing"), ]
       increasing$slope1 <- min(increasing$min_slope, increasing$max_slope)
       # increasing$slope1 <- ifelse(increasing$slope1==0.00, "less than 0.01", increasing$slope1)
       increasing$slope2 <- max(increasing$min_slope, increasing$max_slope)
       # increasing$slope2 <- ifelse(increasing$slope2==0.00, "less than 0.01", increasing$slope2)
 
-      decreasing <- results_p_subset[str_detect(tolower(StatisticalTrend), "decreasing"), ]
+      decreasing <- results_p_subset[str_detect(tolower(TrendText), "decreasing"), ]
       decreasing$slope1 <- min(decreasing$min_slope, decreasing$max_slope)
       # decreasing$slope1 <- ifelse(decreasing$slope1==0.00, "less than 0.01", decreasing$slope1)
       decreasing$slope2 <- max(decreasing$min_slope, decreasing$max_slope)
       # decreasing$slope2 <- ifelse(decreasing$slope2==0.00, "less than 0.01", decreasing$slope2)
 
-      no_change <- results_p_subset[str_detect(tolower(StatisticalTrend), "no significant"), ]
-      insufficient <- results_p_subset[str_detect(tolower(StatisticalTrend), "insufficient"), ]
+      no_change <- results_p_subset[str_detect(tolower(TrendText), "no detectable"), ]
+      insufficient <- results_p_subset[str_detect(tolower(TrendText), "insufficient"), ]
 
       display_parameter <- ifelse(parameter=="pH", parameter, tolower(parameter))
       units <- ifelse(parameter=="pH", "pH units", units)

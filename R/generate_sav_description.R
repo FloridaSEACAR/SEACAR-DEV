@@ -26,7 +26,7 @@ generate_sav_description <- function(data){
   # Loop through all rows and classify each species by trend type
   for(i in 1:nrow(data)){
     species <- data$Species[i]
-    trend <- data$StatisticalTrend[i]
+    trend <- data$TrendText[i]
     record <- data$Period[i]
 
     if(str_detect(trend, "Insufficient")){
@@ -60,12 +60,12 @@ generate_sav_description <- function(data){
   ## Increasing
   if(length(increasing) == 1){
     s <- increasing[[1]]
-    sentences <- c(sentences, sprintf("An annual increase in percent cover was observed for %s (%.1f%%).", s$species, s$slope))
+    sentences <- c(sentences, sprintf("An annual increase in percent cover was observed for %s (%.2f%%).", s$species, s$slope))
   } else if(length(increasing) == 2){
-    parts <- sapply(increasing, function(s) sprintf("%s (%.1f%%)", s$species, s$slope))
+    parts <- sapply(increasing, function(s) sprintf("%s (%.2f%%)", s$species, s$slope))
     sentences <- c(sentences, sprintf("Annual increases in percent cover were observed for %s and %s.", parts[1], parts[2]))
   } else if(length(increasing) > 2){
-    parts <- sapply(increasing, function(s) sprintf("%s (%.1f%%)", s$species, s$slope))
+    parts <- sapply(increasing, function(s) sprintf("%s (%.2f%%)", s$species, s$slope))
     species_list <- paste(parts[1:(length(parts)-1)], collapse = ", ")
     species_list <- paste0(species_list, ", and ", parts[[length(parts)]])
     sentences <- c(sentences, sprintf("Annual increases in percent cover were observed for %s.", species_list))
@@ -74,12 +74,12 @@ generate_sav_description <- function(data){
   ## Decreasing
   if(length(decreasing) == 1){
     s <- decreasing[[1]]
-    sentences <- c(sentences, sprintf("An annual decrease in percent cover was observed for %s (%.1f%%).", s$species, s$slope))
+    sentences <- c(sentences, sprintf("An annual decrease in percent cover was observed for %s (%.2f%%).", s$species, s$slope))
   } else if(length(decreasing) == 2){
-    parts <- sapply(decreasing, function(s) sprintf("%s (%.1f%%)", s$species, s$slope))
+    parts <- sapply(decreasing, function(s) sprintf("%s (%.2f%%)", s$species, s$slope))
     sentences <- c(sentences, sprintf("Annual decreases in percent cover were observed for %s and %s.", parts[1], parts[2]))
   } else if(length(decreasing) > 2){
-    parts <- sapply(decreasing, function(s) sprintf("%s (%.1f%%)", s$species, s$slope))
+    parts <- sapply(decreasing, function(s) sprintf("%s (%.2f%%)", s$species, s$slope))
     species_list <- paste(parts[1:(length(parts)-1)], collapse = ", ")
     species_list <- paste0(species_list, ", and ", parts[[length(parts)]])
     sentences <- c(sentences, sprintf("Annual decreases in percent cover were observed for %s.", species_list))

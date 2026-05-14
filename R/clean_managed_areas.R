@@ -45,6 +45,9 @@ clean_managed_areas <- function(df, type) {
     stop("Input `type` must be either 'ma' or 'buff'.")
   }
 
+  df[[a_id_col]] <- as.character(df[[a_id_col]])
+  df[[ma_col]] <- as.character(df[[ma_col]])
+
   ldf <- as_polars_lf(df)$with_row_index(".row_id")
 
   area_long <- ldf$
@@ -53,11 +56,15 @@ clean_managed_areas <- function(df, type) {
       pl$col(a_id_col)$alias("a_id")
     )$
     with_columns(
-      pl$col("a_id")$str$split("/")$alias("a_id")
+      pl$col("a_id")$
+        str$split("/")$
+        alias("a_id")
     )$
     explode("a_id")$
     with_columns(
-      pl$col("a_id")$str$strip_chars()$alias("a_id")
+      pl$col("a_id")$
+        str$strip_chars()$
+        alias("a_id")
     )
 
   name_long <- ldf$
