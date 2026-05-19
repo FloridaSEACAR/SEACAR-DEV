@@ -13,7 +13,7 @@ Water Column,WC,Water Quality,WQ,Dissolved Oxygen,DO,mg/L,Field,All,Discrete,1,4
 Water Column,WC,Water Clarity,WC,Turbidity,Turb,NTU,,,Continuous,1,35
 Water Column,WC,Water Clarity,WC,Turbidity,Turb,NTU,Lab,All,Discrete,1,34
 Water Column,WC,Water Clarity,WC,Total Suspended Solids,TSS,mg/L,Lab,All,Discrete,1,32
-Water Column,WC,Water Clarity,WC,Secchi Depth,Secchi,m,Field,Surface,Discrete,1,31
+Water Column,WC,Water Clarity,WC,Secchi Depth,Secchi,m,Field,All,Discrete,1,31
 Water Column,WC,Water Clarity,WC,Colored Dissolved Organic Matter,CDOM,PCU,Lab,All,Discrete,1,29
 Water Column,WC,Water Clarity,WC,"Chlorophyll a, Uncorrected for Pheophytin",Chla,ug/L,Lab,All,Discrete,1,25
 Water Column,WC,Nutrients,NUT,Total Phosphorus,TP,mg/L,Lab,All,Discrete,1,23

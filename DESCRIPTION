@@ -1,7 +1,7 @@
 Package: SEACAR
 Type: Package
 Title: SEACAR Package
-Version: 0.7.0
+Version: 0.7.3
 Author: Florida SEACAR
 Maintainer: Florida SEACAR <SEACAR@FloridaDEP.gov>
 Description: A repository for helper functions and data to help wrangle SEACAR data.

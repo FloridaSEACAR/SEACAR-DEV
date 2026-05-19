@@ -278,8 +278,8 @@ generate_wc_description <- function(input_df){
       # Apply alterations to final display of text
       description <- stringi::stri_replace_all_regex(
         description,
-        pattern = c(" ph", "mg/l", "ntu ", " deg c ", " % per"),
-        replacement = c(" pH", "mg/L", "NTU ", "&deg;C ", "% per"),
+        pattern = c(" ph", "mg/l", "ntu ", " deg c ", " % per", "ms/cm"),
+        replacement = c(" pH", "mg/L", "NTU ", "&deg;C ", "% per", "mS/cm"),
         vectorize = FALSE
       )
 
