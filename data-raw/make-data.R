@@ -31,7 +31,7 @@ FigureCaptions <- openxlsx::read.xlsx("inst/extdata/AtlasFigureCaptions_Final.xl
   as.data.table()
 usethis::use_data(FigureCaptions, overwrite = TRUE)
 
-TableDescriptions <- openxlsx::read.xlsx("inst/extdata/Atlas_Descriptions.xlsx")
+TableDescriptions <- openxlsx::read.xlsx("inst/extdata/AtlasTableCaptions.xlsx")
 usethis::use_data(TableDescriptions, overwrite = TRUE)
 
 DB_Thresholds <- openxlsx::read.xlsx("inst/extdata/SEACAR_Metadata.xlsx", sheet = "Ref_QAThresholds", startRow = 7, check.names = F)
