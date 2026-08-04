@@ -1,14 +1,13 @@
 Package: SEACAR
 Type: Package
 Title: SEACAR Package
-Version: 0.7.3
+Version: 0.7.8
 Author: Florida SEACAR
 Maintainer: Florida SEACAR <SEACAR@FloridaDEP.gov>
 Description: A repository for helper functions and data to help wrangle SEACAR data.
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.3
 Depends: 
     R (>= 3.5)
 Imports:
@@ -26,3 +25,4 @@ Imports:
     leaflet,
     scales,
     tidyr
+Config/roxygen2/version: 8.0.0

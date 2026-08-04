@@ -4,7 +4,7 @@
 \alias{generate_description}
 \title{SEACAR generate_description function to generate table descriptions for various habitats.}
 \usage{
-generate_description(data, habitat)
+generate_description(data, habitat, ...)
 }
 \arguments{
 \item{data}{a dataframe with statistical analysis results for various habitats.}

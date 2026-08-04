@@ -12,14 +12,14 @@
 #' @return A text-based descriptive statement wrapped in HTML paragraph tags.
 #' @export
 #'
-generate_description <- function(data, habitat){
+generate_description <- function(data, habitat, ...){
   habitat <- tolower(habitat)
   setDT(data)
   switch(habitat,
          coral = generate_coral_description(data),
          cw = generate_cw_description(data),
          nekton = generate_nekton_description(data),
-         oyster = generate_oyster_description(data),
+         oyster = generate_oyster_description(data, ...),
          sav = generate_sav_description(data),
          wc = generate_wc_description(data),
          stop("Unknown habitat type: ", habitat))

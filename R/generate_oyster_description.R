@@ -11,7 +11,89 @@
 #' @return A text-based descriptive statement wrapped in HTML paragraph tags.
 #' @export
 #'
-generate_oyster_description <- function(data){
+generate_oyster_description <- function(data, include_dead_shells = TRUE){
+  # Function to generate shell height sentence structure based on dead/live
+  shell_height_construct <- function(hab_type, live_type){
+    if(live_type=="live"){
+      shell_type <- "Live Oysters"
+      live_type_description <- "live oyster shell height"
+    } else if(live_type=="dead"){
+      shell_type <- "Dead Oyster Shells"
+      live_type_description <- "dead oyster shell height"
+    }
+
+    filtered_oy_ht <- filtered_oy[HabitatType == hab_type & !SizeClass == "" & ShellType == shell_type, ]
+    if(nrow(filtered_oy_ht)==0) return()
+
+    num_inc <- nrow(filtered_oy_ht[str_detect(TrendText, "Increasing")])
+    num_dec <- nrow(filtered_oy_ht[str_detect(TrendText, "Decreasing")])
+    num_no_model <- nrow(filtered_oy_ht[str_detect(TrendText, "Model did not fit")])
+    num_insufficient <- nrow(filtered_oy_ht[str_detect(TrendText, "Insufficient")])
+    num_nonsig <- nrow(filtered_oy_ht[str_detect(TrendText, "No detectable")])
+    # Diverging trend (one increase, one decrease)
+    if(num_inc>0 & num_dec>0){
+      inc_class <- filtered_oy_ht[ModelEstimate > 0, SizeClass]
+      inc_slope <- round(abs(filtered_oy_ht[SizeClass==inc_class, ModelEstimate]),2)
+      dec_class <- filtered_oy_ht[ModelEstimate < 0, SizeClass]
+      dec_slope <- round(abs(filtered_oy_ht[SizeClass==dec_class, ModelEstimate]),2)
+      sentence <- glue("For {tolower(hab_type)} reefs, annual average {live_type} oyster shell height in the {inc_class} size class increased by {inc_slope}mm per year, and it decreased by {dec_slope}mm per year in the {dec_class} size class.")
+    } else if(num_inc==1 | num_dec==1){
+      # Single direction
+      direction <- ifelse(num_inc==1, "increased", "decreased")
+      size_class <- ifelse(num_inc==1, filtered_oy_ht[str_detect(TrendText, "Increasing"), SizeClass], filtered_oy_ht[str_detect(TrendText, "Decreasing"), SizeClass])
+      slope <- round(abs(filtered_oy_ht[SizeClass==size_class, ModelEstimate]),2)
+      first_part <- glue("For {tolower(hab_type)} reefs, annual average {live_type} oyster shell height in the {size_class} size class {direction} by {slope}mm per year,")
+      # Second part
+      if(num_no_model>0){
+        size_class2 <- filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), unique(SizeClass)]
+        second_part <- glue("and a model could not be fitted for {live_type_description} in the {size_class2} size class.")
+      }
+      if(num_insufficient>0){
+        size_class2 <- filtered_oy_ht[SufficientData==FALSE, unique(SizeClass)]
+        second_part <- glue("and there was insufficient data to calculate a trend for {live_type_description} in the {size_class2} size class.")
+      }
+      if(num_nonsig>0){
+        size_class2 <- filtered_oy_ht[str_detect(TrendText, "No detectable"), unique(SizeClass)]
+        second_part <- glue("and there was no detectable trend for {live_type_description} in the {size_class2} size class.")
+      }
+      sentence <- paste(first_part, second_part)
+    } else if(num_inc==2 | num_dec==2) {
+      # Same direction
+      direction <- ifelse(nrow(filtered_oy_ht[ModelEstimate > 0])>0, "increased", "decreased")
+      class1 <- sort(unique(filtered_oy_ht$SizeClass))[2]
+      slope1 <- round(abs(filtered_oy_ht[SizeClass==class1, ModelEstimate]),2)
+      class2 <- sort(unique(filtered_oy_ht$SizeClass))[1]
+      slope2 <- round(abs(filtered_oy_ht[SizeClass==class2, ModelEstimate]),2)
+      sentence <- glue("For {tolower(hab_type)} reefs, annual average {live_type} oyster shell height in the {class1} and {class2} size classes {direction} by {slope1}mm per year and {slope2}mm per year, respectively.")
+    } else if(num_no_model==2){
+      class1 = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))[2]
+      class2 = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))[1]
+      sentence <- glue("For {tolower(hab_type)} reefs, a model could not be fitted for {live_type_description} in either the {class1} or the {class2} size class.")
+    } else if(num_no_model==1){
+      size_class = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))
+      sentence <- glue("For {tolower(hab_type)} reefs, a model could not be fitted for {live_type_description} in the {size_class} size class.")
+    } else if(num_insufficient==2){
+      class1 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))[2]
+      class2 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))[1]
+      sentence <- glue("For {tolower(hab_type)} reefs, there was insufficient data to calculate a trend for {live_type_description} in either the {class1} or the {class2} size class.")
+    } else if(num_nonsig==2){
+      class1 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))[2]
+      class2 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))[1]
+      sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for {live_type_description} in either the {class1} or the {class2} size class.")
+    } else if(num_nonsig==1 & num_insufficient==1){
+      class1 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))
+      class2 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))
+      sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for {live_type_description} in the {class1} size class, and there was insufficient data to calculate a trend for {live_type_description} in the {class2} size class.")
+    } else if(num_insufficient==1){
+      size_class = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))
+      sentence <- glue("For {tolower(hab_type)} reefs, there was insufficient data to calculate a trend for {live_type_description} in the {size_class} size class.")
+    } else if(num_nonsig==1){
+      size_class = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))
+      sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for {live_type_description} in the {size_class} size class.")
+    }
+    return(sentence)
+  }
+
   descriptionTable <- data.table()
   for(parameter in unique(data$ParameterName)){
     indicator <- ifelse(parameter=="Shell Height", "Size Class", parameter)
@@ -60,89 +142,14 @@ generate_oyster_description <- function(data){
 
       # Loop through habitat types in desired order
       for(hab_type in habitat_order){
-        if(!hab_type %in% unique(filtered_oy$HabitatType)) next
-        filtered_oy_ht <- filtered_oy[HabitatType == hab_type & !SizeClass == "" & ShellType == "Live Oysters", ]
-
-        num_inc <- nrow(filtered_oy_ht[str_detect(TrendText, "Increasing")])
-        num_dec <- nrow(filtered_oy_ht[str_detect(TrendText, "Decreasing")])
-        num_no_model <- nrow(filtered_oy_ht[str_detect(TrendText, "Model did not fit")])
-        num_insufficient <- nrow(filtered_oy_ht[str_detect(TrendText, "Insufficient")])
-        num_nonsig <- nrow(filtered_oy_ht[str_detect(TrendText, "No detectable")])
-        # Diverging trend (one increase, one decrease)
-        if(num_inc>0 & num_dec>0){
-          inc_class <- filtered_oy_ht[ModelEstimate > 0, SizeClass]
-          inc_slope <- round(abs(filtered_oy_ht[SizeClass==inc_class, ModelEstimate]),2)
-          dec_class <- filtered_oy_ht[ModelEstimate < 0, SizeClass]
-          dec_slope <- round(abs(filtered_oy_ht[SizeClass==dec_class, ModelEstimate]),2)
-          sentence <- glue("For {tolower(hab_type)} reefs, annual average live oyster shell height in the {inc_class} size class increased by {inc_slope}mm per year, and it decreased by {dec_slope}mm per year in the {dec_class} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_inc==1 | num_dec==1){
-          # Single direction
-          direction <- ifelse(num_inc==1, "increased", "decreased")
-          size_class <- ifelse(num_inc==1, filtered_oy_ht[ModelEstimate > 0, SizeClass], filtered_oy_ht[ModelEstimate < 0, SizeClass])
-          slope <- round(abs(filtered_oy_ht[SizeClass==size_class, ModelEstimate]),2)
-          first_part <- glue("For {tolower(hab_type)} reefs, annual average live oyster shell height in the {size_class} size class {direction} by {slope}mm per year,")
-          # Second part
-          if(num_no_model>0){
-            size_class2 <- filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), unique(SizeClass)]
-            second_part <- glue("and a model could not be fitted for live oysters in the {size_class2} size class.")
-          }
-          if(num_insufficient>0){
-            size_class2 <- filtered_oy_ht[SufficientData==FALSE, unique(SizeClass)]
-            second_part <- glue("and there was insufficient data to calculate a trend for live oysters in the {size_class2} size class.")
-          }
-          if(num_nonsig>0){
-            size_class2 <- filtered_oy_ht[str_detect(TrendText, "No detectable"), unique(SizeClass)]
-            second_part <- glue("and there was no detectable trend for live oysters in the {size_class2} size class.")
-          }
-          sentence <- paste(first_part, second_part)
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_inc==2 | num_dec==2) {
-          # Same direction
-          direction <- ifelse(nrow(filtered_oy_ht[ModelEstimate > 0])>0, "increased", "decreased")
-          class1 <- sort(unique(filtered_oy_ht$SizeClass))[2]
-          slope1 <- round(abs(filtered_oy_ht[SizeClass==class1, ModelEstimate]),2)
-          class2 <- sort(unique(filtered_oy_ht$SizeClass))[1]
-          slope2 <- round(abs(filtered_oy_ht[SizeClass==class2, ModelEstimate]),2)
-          sentence <- glue("For {tolower(hab_type)} reefs, annual average live oyster shell height in the {class1} and {class2} size classes {direction} by {slope1}mm per year and {slope2}mm per year, respectively.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_no_model==2){
-          class1 = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))[2]
-          class2 = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))[1]
-          sentence <- glue("For {tolower(hab_type)} reefs, a model could not be fitted for live oysters in either the {class1} or the {class2} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_no_model==1){
-          size_class = sort(unique(filtered_oy_ht[SufficientData==TRUE & is.na(ModelEstimate), SizeClass]))
-          sentence <- glue("For {tolower(hab_type)} reefs, a model could not be fitted for live oysters in the {size_class} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_insufficient==2){
-          class1 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))[2]
-          class2 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))[1]
-          sentence <- glue("For {tolower(hab_type)} reefs, there was insufficient data to calculate a trend for live oysters in either the {class1} or the {class2} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_nonsig==2){
-          class1 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))[2]
-          class2 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))[1]
-          sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for live oysters in either the {class1} or the {class2} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_nonsig==1 & num_insufficient==1){
-          class1 = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))
-          class2 = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))
-          sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for live oysters in the {class1} size class, and there was insufficient data to calculate a trend for live oysters in the {class2} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_insufficient==1){
-          size_class = sort(unique(filtered_oy_ht[SufficientData==FALSE, SizeClass]))
-          sentence <- glue("For {tolower(hab_type)} reefs, there was insufficient data to calculate a trend for live oysters in the {size_class} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
-        } else if(num_nonsig==1){
-          size_class = sort(unique(filtered_oy_ht[str_detect(TrendText, "No detectable"), SizeClass]))
-          sentence <- glue("For {tolower(hab_type)} reefs, there was no detectable trend for live oysters in the {size_class} size class.")
-          sentences[[hab_type]][["trends"]] <- sentence
+        sentences[[hab_type]][["trends"]] <- shell_height_construct(hab_type, "live")
+        if(include_dead_shells){
+          sentences[[hab_type]][["deadShells"]] <- shell_height_construct(hab_type, "dead")
         }
       }
 
       # If dead shells are present, include statement about lack of models for Dead shells
-      if(nrow(filtered_oy[ShellType=="Dead Oyster Shells" & SizeClass!=""])>0){
+      if(nrow(filtered_oy[ShellType=="Dead Oyster Shells" & SizeClass!=""])>0 & !include_dead_shells){
         dead_sentence <- glue("Models are not run on dead oyster shell measurements.")
         sentences[[hab_type]][["deadShells"]] <- dead_sentence
       }

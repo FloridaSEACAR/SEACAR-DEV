@@ -4,7 +4,7 @@
 \alias{clean_managed_areas}
 \title{Clean and split concatenated Managed Area names}
 \usage{
-clean_managed_areas(df, type)
+clean_managed_areas(df, type, keep_na = FALSE)
 }
 \arguments{
 \item{df}{A dataframe that contains the column to be modified, either `ManagedAreaName` or `ManagedAreaName_Buff`.}

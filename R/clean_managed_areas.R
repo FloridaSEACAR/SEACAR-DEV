@@ -37,20 +37,37 @@
 #'
 #' @import dplyr tidyr stringr polars data.table
 #' @export
-clean_managed_areas <- function(df, type) {
-  if (type %in% c("ma", "buff")) {
-    ma_col   <- if (type == "ma") "ManagedAreaName" else "ManagedAreaName_Buff"
-    a_id_col <- if (type == "ma") "AreaID" else "AreaID_Buff"
+clean_managed_areas <- function(df, type, keep_na = TRUE){
+  if(type %in% c("ma", "buff")){
+    ma_col   <- if(type == "ma") "ManagedAreaName" else "ManagedAreaName_Buff"
+    a_id_col <- if(type == "ma") "AreaID" else "AreaID_Buff"
   } else {
     stop("Input `type` must be either 'ma' or 'buff'.")
   }
 
+  if(!is.logical(keep_na) ||
+      length(keep_na) != 1L || is.na(keep_na)){
+    stop("Input `keep_na` must be either TRUE or FALSE.")
+  }
+
+  # Save the original column order
+  original_cols <- names(df)
+
+  # Ensure splitting and regex operations use character columns
   df[[a_id_col]] <- as.character(df[[a_id_col]])
-  df[[ma_col]] <- as.character(df[[ma_col]])
+  df[[ma_col]]   <- as.character(df[[ma_col]])
 
   ldf <- as_polars_lf(df)$with_row_index(".row_id")
 
-  area_long <- ldf$
+  # Only process rows that have values in both managed-area columns.
+  # Rows where only one column is NA continue to be excluded.
+  valid_ldf <- ldf$
+    filter(
+      pl$col(a_id_col)$is_not_null() & pl$col(ma_col)$is_not_null()
+    )
+
+  # Long form of AreaID
+  area_long <- valid_ldf$
     select(
       ".row_id",
       pl$col(a_id_col)$alias("a_id")
@@ -67,33 +84,51 @@ clean_managed_areas <- function(df, type) {
         alias("a_id")
     )
 
-  name_long <- ldf$
+  # Long form of ManagedAreaName
+  name_long <- valid_ldf$
     select(
       ".row_id",
       pl$col(ma_col)$alias("ma")
     )$
     with_columns(
-      pl$col("ma")$str$split("/")$alias("ma")
+      pl$col("ma")$
+        str$split("/")$
+        alias("ma")
     )$
     explode("ma")$
     with_columns(
-      pl$col("ma")$str$strip_chars()$alias("ma"),
-      pl$col("ma")$str$extract("^(\\d+)", 1)$alias("ID_extracted"),
-      pl$col("ma")$str$replace("^\\d+\\s*-\\s*", "")$alias("Name_clean")
+      pl$col("ma")$
+        str$strip_chars()$
+        alias("ma"),
+
+      pl$col("ma")$
+        str$extract("^(\\d+)", 1)$
+        alias("ID_extracted"),
+
+      pl$col("ma")$
+        str$replace("^\\d+\\s*-\\s*", "")$
+        alias("Name_clean")
     )
 
-  df_other <- ldf$drop(c(a_id_col, ma_col))
+  # All remaining original columns
+  df_other <- valid_ldf$
+    drop(c(a_id_col, ma_col))
 
-  result <- area_long$
+  # Match AreaID values to IDs extracted from ManagedAreaName
+  processed <- area_long$
     join(
       name_long,
-      left_on = c(".row_id", "a_id"),
+      left_on  = c(".row_id", "a_id"),
       right_on = c(".row_id", "ID_extracted"),
       how = "inner"
     )$
     with_columns(
-      pl$col("Name_clean")$alias(ma_col),
-      pl$col("a_id")$alias(a_id_col)
+      pl$col("Name_clean")$
+        alias(ma_col),
+
+      pl$col("a_id")$
+        cast(pl$Float64)$
+        alias(a_id_col)
     )$
     drop(c("ma", "Name_clean", "a_id"))$
     join(
@@ -101,10 +136,34 @@ clean_managed_areas <- function(df, type) {
       on = ".row_id",
       how = "left"
     )$
-    drop(".row_id")$
-    with_columns(
-      pl$col(a_id_col)$cast(pl$Float64)
+    select(!!!c(".row_id", original_cols))
+
+  if(keep_na){
+    # Preserve rows where both corresponding fields are NA
+    na_rows <- ldf$
+      filter(
+        pl$col(a_id_col)$is_null() &
+          pl$col(ma_col)$is_null()
+      )$
+      with_columns(
+        # Match the output datatype of processed AreaID values
+        pl$col(a_id_col)$cast(pl$Float64)
+      )$
+      select(!!!c(".row_id", original_cols))
+
+    result_lf <- pl$concat(
+      processed,
+      na_rows,
+      how = "vertical_relaxed"
     )$
+      sort(".row_id")
+
+  } else {
+    result_lf <- processed
+  }
+
+  result <- result_lf$
+    drop(".row_id")$
     collect() |>
     as.data.table()
 

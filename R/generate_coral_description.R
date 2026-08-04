@@ -17,7 +17,7 @@ generate_coral_description <- function(data){
     trend <- data$TrendText
     min_year <- data$EarliestYear
     max_year <- data$LatestYear
-    slope <- ifelse(round(data$LME_Slope, 2)==0.00, "less than 0.01", round(data$LME_Slope, 2))
+    slope <- ifelse(round(data$LME_Slope, 2)==0.00, "less than 0.01", abs(round(data$LME_Slope, 2)))
     time_period <- ifelse(min_year==max_year, "", glue(" between {min_year} and {max_year}"))
     if(str_detect(trend, "Insufficient")){
       sentence <- glue("There was insufficient data to determine a trend{time_period}.")

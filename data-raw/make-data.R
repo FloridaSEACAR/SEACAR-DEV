@@ -4,6 +4,9 @@ library(dplyr)
 library(ggplot2)
 library(extrafont)
 
+#### Updating SEACAR-DEV process
+#
+
 # Temporary get_shape_coordinates, call into global so can be used to determine "corners"
 get_shape_coordinates <- function(ma_shape){
   bbox_list <- lapply(st_geometry(ma_shape), st_bbox)
@@ -28,7 +31,7 @@ FigureCaptions <- openxlsx::read.xlsx("inst/extdata/AtlasFigureCaptions_Final.xl
   as.data.table()
 usethis::use_data(FigureCaptions, overwrite = TRUE)
 
-TableDescriptions <- openxlsx::read.xlsx("inst/extdata/Atlas_Descriptions_2025-09-30.xlsx")
+TableDescriptions <- openxlsx::read.xlsx("inst/extdata/Atlas_Descriptions.xlsx")
 usethis::use_data(TableDescriptions, overwrite = TRUE)
 
 DB_Thresholds <- openxlsx::read.xlsx("inst/extdata/SEACAR_Metadata.xlsx", sheet = "Ref_QAThresholds", startRow = 7, check.names = F)
@@ -40,7 +43,7 @@ usethis::use_data(DB_Thresholds, overwrite = TRUE)
 # Load and transform location-based .shp files from latest export
 source("../SEACAR_Trend_Analyses/SEACAR_data_location.R")
 library(sf)
-GeoDBdate <- "9Mar2026"
+GeoDBdate <- "3June2026"
 # Point locations shapefile
 locs_pts <- st_read(paste0(seacar_shape_location, "/SampleLocations", GeoDBdate, "/seacar_dbo_vw_SampleLocation_Point.shp")) %>%
   st_make_valid() %>% st_transform(crs = 4326)

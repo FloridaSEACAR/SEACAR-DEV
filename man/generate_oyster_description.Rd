@@ -4,7 +4,7 @@
 \alias{generate_oyster_description}
 \title{SEACAR generate_osyter_description function to generate table descriptions for Oyster habitat for a single ManagedArea, to be used within `generate_description()`.}
 \usage{
-generate_oyster_description(data)
+generate_oyster_description(data, include_dead_shells = TRUE)
 }
 \arguments{
 \item{data}{a dataframe with statistical analysis results for Oyster habitat.}

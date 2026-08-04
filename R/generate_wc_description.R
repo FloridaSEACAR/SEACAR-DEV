@@ -174,7 +174,8 @@ generate_wc_description <- function(input_df){
         } else {
           # Make exception for when the slopes are the same and only 2 stations
           if(increasing$slope1 == increasing$slope2 & increasing$n_stations==2){
-            sentence <- sprintf("At %s program locations, monthly average %s increased by %.2f %s per year.",
+            increasing$slope1 <- ifelse(round(increasing$slope1,2)==0.00, "less than 0.01", round(increasing$slope1,2))
+            sentence <- sprintf("At %s program locations, monthly average %s increased by %s %s per year.",
                                 english::english(increasing$n_stations),
                                 display_parameter,
                                 increasing$slope1,
@@ -218,7 +219,8 @@ generate_wc_description <- function(input_df){
         } else {
           # Make exception for when the slopes are the same and only 2 stations
           if(decreasing$slope1 == decreasing$slope2 & decreasing$n_stations==2){
-            sentence <- sprintf("At %s program locations, monthly average %s decreased by %.2f %s per year.",
+            decreasing$slope1 <- ifelse(round(decreasing$slope1,2)==0.00, "less than 0.01", round(decreasing$slope1,2))
+            sentence <- sprintf("At %s program locations, monthly average %s decreased by %s %s per year.",
                                 english::english(decreasing$n_stations),
                                 display_parameter,
                                 decreasing$slope1,
